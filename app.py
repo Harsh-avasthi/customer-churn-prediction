@@ -17,25 +17,45 @@ st.set_page_config(
 # Load CSS
 # ---------------------------
 
-with open("style.css") as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+try:
+    with open("style.css") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+except FileNotFoundError:
+    pass
 
 # ---------------------------
-# Sidebar
+# Multi-page Navigation Setup
+# ---------------------------
+
+pages = {
+    "Overview": [
+        st.Page("app.py", title="Dashboard", icon="🏠")
+    ],
+    "Prediction & Analytics": [
+        st.Page("pages/2_🤖_Prediction.py", title="Prediction", icon="🤖"),
+        st.Page("pages/3_📊_Analytics.py", title="Analytics", icon="📊"),
+        st.Page("pages/4_Batch_Prediction.py", title="Batch Prediction", icon="📂")
+    ],
+    "Insights & Model": [
+        st.Page("pages/5_Model_Performance.py", title="Model Performance", icon="📉"),
+        st.Page("pages/6_Business_Insights.py", title="Business Insights", icon="💼"),
+        st.Page("pages/7_Settings.py", title="Settings", icon="⚙️"),
+        st.Page("pages/8_About.py", title="About", icon="ℹ️")
+    ]
+}
+
+pg = st.navigation(pages)
+
+# ---------------------------
+# Sidebar (Shared Elements)
 # ---------------------------
 
 with st.sidebar:
-
     st.image("https://img.icons8.com/color/96/artificial-intelligence.png", width=80)
-
     st.title("Customer Churn")
-
     st.caption("Prediction Platform v2.0")
-
     st.markdown("---")
-
     st.success("🟢 Model Loaded")
-
     st.info(f"""
 **Model**
 
@@ -43,25 +63,21 @@ with st.sidebar:
 
 Accuracy : {MODEL_ACCURACY}
 """)
-
     st.markdown("---")
-
     st.write("### 📌 Quick Stats")
-
     st.metric("Customers", TOTAL_CUSTOMERS)
-
     st.metric("Churn", CHURN_RATE)
-
     st.metric("Retention", RETENTION)
 
+# Run the selected page
+pg.run()
+
 # ---------------------------
-# Header
+# Header (Main Dashboard Content)
 # ---------------------------
 
 st.title("🚀 Customer Churn Prediction Platform")
-
 st.caption("AI Powered Customer Retention Dashboard")
-
 st.markdown("---")
 
 # ---------------------------
@@ -88,10 +104,9 @@ st.markdown("---")
 # Welcome
 # ---------------------------
 
-left, right = st.columns([2,1])
+left, right = st.columns([2, 1])
 
 with left:
-
     st.markdown("""
 ## 👋 Welcome
 
@@ -111,11 +126,10 @@ This application predicts customer churn using Machine Learning.
 
 - 💼 Business Insights
 
-Use the **left sidebar** to navigate.
+Use the **left sidebar** to navigate between pages.
 """)
 
 with right:
-
     st.markdown("""
 <div class="glass">
 
@@ -151,7 +165,6 @@ st.subheader("📊 Dashboard Overview")
 chart1, chart2 = st.columns(2)
 
 with chart1:
-
     st.info("""
 ### 🎯 Objective
 
@@ -161,7 +174,6 @@ Enable retention strategies before churn happens.
 """)
 
 with chart2:
-
     st.success("""
 ### 💡 Business Benefits
 
