@@ -1,214 +1,207 @@
 import streamlit as st
-import joblib
 import pandas as pd
+from config import *
 
+# ---------------------------
+# Page Config
+# ---------------------------
 
-# Load trained pipeline model
-model = joblib.load("churn_model.pkl")
-
-
-# App Title
-st.title("🚀 Customer Churn Prediction System")
-
-st.write("Enter Customer Details")
-
-
-# Input Features
-
-gender = st.selectbox(
-    "Gender",
-    ["Male", "Female"]
+st.set_page_config(
+    page_title=PAGE_TITLE,
+    page_icon=PAGE_ICON,
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
+# ---------------------------
+# Load CSS
+# ---------------------------
 
-SeniorCitizen = st.selectbox(
-    "Senior Citizen",
-    [0, 1]
-)
+try:
+    with open("style.css") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+except FileNotFoundError:
+    pass
 
+# ---------------------------
+# Sidebar (Shared Elements)
+# ---------------------------
 
-Partner = st.selectbox(
-    "Partner",
-    ["Yes", "No"]
-)
+with st.sidebar:
+    st.image("https://img.icons8.com/color/96/artificial-intelligence.png", width=80)
+    st.title("Customer Churn")
+    st.caption("Prediction Platform v2.0")
+    st.markdown("---")
+    st.success("🟢 Model Loaded")
+    st.info(f"""
+**Model**
 
+{MODEL_NAME}
 
-Dependents = st.selectbox(
-    "Dependents",
-    ["Yes", "No"]
-)
+Accuracy : {MODEL_ACCURACY}
+""")
+    st.markdown("---")
+    st.write("### 📌 Quick Stats")
+    st.metric("Customers", TOTAL_CUSTOMERS)
+    st.metric("Churn", CHURN_RATE)
+    st.metric("Retention", RETENTION)
 
+# ---------------------------
+# Header (Main Dashboard Content)
+# ---------------------------
 
-tenure = st.number_input(
-    "Tenure (Months)",
-    min_value=0,
-    max_value=100,
-    value=12
-)
+st.title("🚀 Customer Churn Prediction Platform")
+st.caption("AI Powered Customer Retention Dashboard")
+st.markdown("---")
 
+# ---------------------------
+# KPI Cards
+# ---------------------------
 
-PhoneService = st.selectbox(
-    "Phone Service",
-    ["Yes", "No"]
-)
+c1, c2, c3, c4 = st.columns(4)
 
+with c1:
+    st.metric("👥 Customers", TOTAL_CUSTOMERS)
 
-MultipleLines = st.selectbox(
-    "Multiple Lines",
-    ["Yes", "No", "No phone service"]
-)
+with c2:
+    st.metric("🎯 Accuracy", MODEL_ACCURACY)
 
+with c3:
+    st.metric("⚠ Churn Rate", CHURN_RATE)
 
-InternetService = st.selectbox(
-    "Internet Service",
-    ["DSL", "Fiber optic", "No"]
-)
+with c4:
+    st.metric("💚 Retention", RETENTION)
 
+st.markdown("---")
 
-OnlineSecurity = st.selectbox(
-    "Online Security",
-    ["Yes", "No", "No internet service"]
-)
+# ---------------------------
+# Welcome
+# ---------------------------
 
+left, right = st.columns([2, 1])
 
-OnlineBackup = st.selectbox(
-    "Online Backup",
-    ["Yes", "No", "No internet service"]
-)
+with left:
+    st.markdown("""
+## 👋 Welcome
 
+This application predicts customer churn using Machine Learning.
 
-DeviceProtection = st.selectbox(
-    "Device Protection",
-    ["Yes", "No", "No internet service"]
-)
+### Features
 
+- 🤖 Customer Prediction
 
-TechSupport = st.selectbox(
-    "Tech Support",
-    ["Yes", "No", "No internet service"]
-)
+- 📊 Interactive Dashboard
 
+- 📈 Analytics
 
-StreamingTV = st.selectbox(
-    "Streaming TV",
-    ["Yes", "No", "No internet service"]
-)
+- 📂 Batch Prediction
 
+- 📉 Model Performance
 
-StreamingMovies = st.selectbox(
-    "Streaming Movies",
-    ["Yes", "No", "No internet service"]
-)
+- 💼 Business Insights
 
+Use the **left sidebar** to navigate between pages.
+""")
 
-Contract = st.selectbox(
-    "Contract",
-    ["Month-to-month", "One year", "Two year"]
-)
+with right:
+    st.markdown("""
+<div class="glass">
 
+### 📌 Project
 
-PaperlessBilling = st.selectbox(
-    "Paperless Billing",
-    ["Yes", "No"]
-)
+**Dataset**
 
+Telco Customer Churn
 
-PaymentMethod = st.selectbox(
-    "Payment Method",
-    [
-        "Electronic check",
-        "Mailed check",
-        "Bank transfer (automatic)",
-        "Credit card (automatic)"
-    ]
-)
+**Algorithm**
 
+Random Forest
 
-MonthlyCharges = st.number_input(
-    "Monthly Charges",
-    min_value=0.0,
-    value=70.0
-)
+**Version**
 
+2.0
 
-TotalCharges = st.number_input(
-    "Total Charges",
-    min_value=0.0,
-    value=1000.0
-)
+**Developer**
 
+Harsh
 
+</div>
+""", unsafe_allow_html=True)
 
-# Prediction
+st.markdown("---")
 
-if st.button("🔮 Predict Churn"):
+# ---------------------------
+# Dashboard Overview
+# ---------------------------
 
+st.subheader("📊 Dashboard Overview")
 
-    input_data = pd.DataFrame({
+chart1, chart2 = st.columns(2)
 
-        "gender": [gender],
-        "SeniorCitizen": [SeniorCitizen],
-        "Partner": [Partner],
-        "Dependents": [Dependents],
-        "tenure": [tenure],
-        "PhoneService": [PhoneService],
-        "MultipleLines": [MultipleLines],
-        "InternetService": [InternetService],
-        "OnlineSecurity": [OnlineSecurity],
-        "OnlineBackup": [OnlineBackup],
-        "DeviceProtection": [DeviceProtection],
-        "TechSupport": [TechSupport],
-        "StreamingTV": [StreamingTV],
-        "StreamingMovies": [StreamingMovies],
-        "Contract": [Contract],
-        "PaperlessBilling": [PaperlessBilling],
-        "PaymentMethod": [PaymentMethod],
-        "MonthlyCharges": [MonthlyCharges],
-        "TotalCharges": [TotalCharges]
+with chart1:
+    st.info("""
+### 🎯 Objective
 
-    })
+Predict customers likely to leave the company.
 
+Enable retention strategies before churn happens.
+""")
 
-    # Prediction through pipeline
+with chart2:
+    st.success("""
+### 💡 Business Benefits
 
-    prediction = model.predict(input_data)
+✔ Increase Customer Retention
 
-    probability = model.predict_proba(input_data)[0][1]
+✔ Reduce Revenue Loss
 
+✔ Improve Customer Satisfaction
 
-    st.subheader("📊 Prediction Result")
+✔ Better Marketing Decisions
+""")
 
+st.markdown("---")
 
-    if prediction[0] == 1:
+# ---------------------------
+# Workflow
+# ---------------------------
 
-        st.error("⚠️ Customer will Churn")
+st.subheader("⚙ Workflow")
 
-    else:
+st.markdown("""
 
-        st.success("✅ Customer will Stay")
+1️⃣ Enter Customer Details
 
+⬇
 
-    st.info(
-        f"Churn Probability: {round(probability*100,2)}%"
-    )
+2️⃣ Machine Learning Prediction
 
+⬇
 
-    # Risk Level
+3️⃣ Churn Probability
 
-    if probability < 0.3:
+⬇
 
-        risk = "Low Risk 🟢"
+4️⃣ Business Recommendation
 
-    elif probability < 0.7:
+⬇
 
-        risk = "Medium Risk 🟡"
+5️⃣ Retention Strategy
 
-    else:
+""")
 
-        risk = "High Risk 🔴"
+st.markdown("---")
 
+# ---------------------------
+# Footer
+# ---------------------------
 
-    st.write(
-        "Customer Risk Level:",
-        risk
-    )
+st.markdown("""
+<div class="footer">
+
+© 2026 Customer Churn Prediction Platform
+
+Built with ❤️ using Streamlit & Scikit-Learn
+
+</div>
+""", unsafe_allow_html=True)
