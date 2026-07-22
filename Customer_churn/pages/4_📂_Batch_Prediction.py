@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import joblib
+import os
 
 # -----------------------
 # Page Config
@@ -13,18 +14,38 @@ st.set_page_config(
 )
 
 # -----------------------
-# Load CSS
+# Absolute Path Setup
 # -----------------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, '..'))
 
-with open("style.css") as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+CSS_PATH = os.path.join(ROOT_DIR, "style.css")
+MODEL_PATH = os.path.join(ROOT_DIR, "churn_model.pkl")
+PREPROCESSOR_PATH = os.path.join(ROOT_DIR, "preprocessor.pkl")
 
 # -----------------------
-# Load Model
+# Load CSS Safely
 # -----------------------
+try:
+    if os.path.exists(CSS_PATH):
+        with open(CSS_PATH) as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+except FileNotFoundError:
+    pass
 
-model = joblib.load("churn_model.pkl")
-preprocessor = joblib.load("preprocessor.pkl")
+# -----------------------
+# Load Model Safely
+# -----------------------
+@st.cache_resource
+def load_artifacts():
+    try:
+        model = joblib.load(MODEL_PATH) if os.path.exists(MODEL_PATH) else None
+        preprocessor = joblib.load(PREPROCESSOR_PATH) if os.path.exists(PREPROCESSOR_PATH) else None
+        return model, preprocessor
+    except Exception:
+        return None, None
+
+model, preprocessor = load_artifacts()
 
 # -----------------------
 # Header
@@ -54,62 +75,66 @@ if uploaded_file is not None:
     st.dataframe(df.head(), use_container_width=True)
 
     if st.button("🚀 Predict All Customers", use_container_width=True):
+        if model is not None and preprocessor is not None:
+            with st.spinner("Processing..."):
+                try:
+                    X = preprocessor.transform(df)
 
-        with st.spinner("Processing..."):
+                    prediction = model.predict(X)
 
-            X = preprocessor.transform(df)
+                    probability = model.predict_proba(X)[:, 1]
 
-            prediction = model.predict(X)
+                    df["Prediction"] = prediction
 
-            probability = model.predict_proba(X)[:, 1]
+                    df["Probability"] = (probability * 100).round(2)
 
-            df["Prediction"] = prediction
+                    df["Risk"] = pd.cut(
+                        probability,
+                        bins=[0, 0.3, 0.7, 1],
+                        labels=["Low", "Medium", "High"]
+                    )
 
-            df["Probability"] = (probability * 100).round(2)
+                    st.success("Prediction Completed Successfully!")
 
-            df["Risk"] = pd.cut(
-                probability,
-                bins=[0, 0.3, 0.7, 1],
-                labels=["Low", "Medium", "High"]
-            )
+                    # -----------------------
+                    # KPI Cards
+                    # -----------------------
 
-        st.success("Prediction Completed Successfully!")
+                    c1, c2, c3 = st.columns(3)
 
-        # -----------------------
-        # KPI Cards
-        # -----------------------
+                    with c1:
+                        st.metric(
+                            "Total Customers",
+                            len(df)
+                        )
 
-        c1, c2, c3 = st.columns(3)
+                    with c2:
+                        st.metric(
+                            "Likely to Churn",
+                            int((df["Prediction"] == 1).sum())
+                        )
 
-        with c1:
-            st.metric(
-                "Total Customers",
-                len(df)
-            )
+                    with c3:
+                        st.metric(
+                            "Likely to Stay",
+                            int((df["Prediction"] == 0).sum())
+                        )
 
-        with c2:
-            st.metric(
-                "Likely to Churn",
-                int((df["Prediction"] == 1).sum())
-            )
+                    st.markdown("---")
 
-        with c3:
-            st.metric(
-                "Likely to Stay",
-                int((df["Prediction"] == 0).sum())
-            )
+                    st.subheader("📊 Prediction Results")
 
-        st.markdown("---")
+                    st.dataframe(df, use_container_width=True)
 
-        st.subheader("📊 Prediction Results")
+                    csv = df.to_csv(index=False).encode("utf-8")
 
-        st.dataframe(df, use_container_width=True)
-
-        csv = df.to_csv(index=False).encode("utf-8")
-
-        st.download_button(
-            label="📥 Download Results",
-            data=csv,
-            file_name="batch_predictions.csv",
-            mime="text/csv"
-        )
+                    st.download_button(
+                        label="📥 Download Results",
+                        data=csv,
+                        file_name="batch_predictions.csv",
+                        mime="text/csv"
+                    )
+                except Exception as e:
+                    st.error(f"Error during transformation or prediction: {e}")
+        else:
+            st.error("⚠️ Model or Preprocessor file not found in root directory. Please check your GitHub files.")
