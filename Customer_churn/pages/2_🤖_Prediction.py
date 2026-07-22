@@ -1,76 +1,49 @@
-import streamlit as st
-import pandas as pd
 import os
+import sys
 import joblib
+import pandas as pd
 
 # ---------------------------------------------------------
-# Page Config
-# ---------------------------------------------------------
-st.set_page_config(
-    page_title="Customer Prediction",
-    page_icon="🤖",
-    layout="wide"
-)
-
-st.title("🤖 Customer Churn Prediction")
-st.markdown("---")
-
-# ---------------------------------------------------------
-# Absolute Path Setup & Model Loading (Self-Contained)
+# Absolute Path Setup for Cloud Deployment (Streamlit Cloud)
 # ---------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# Agar model root folder me hai, toh ek level upar ka path set karte hain
-ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, '..'))
 
-MODEL_PATH = os.path.join(ROOT_DIR, "churn_model.pkl")
-PREPROCESSOR_PATH = os.path.join(ROOT_DIR, "preprocessor.pkl")
-DATA_PATH = os.path.join(ROOT_DIR, "telco_clean.csv")
+# Agar parent directory me bhi search karna pade toh path add kar do
+PARENT_DIR = os.path.dirname(BASE_DIR)
+if PARENT_DIR not in sys.path:
+    sys.path.append(PARENT_DIR)
 
-@st.cache_resource
-def load_artifacts():
+MODEL_PATH = os.path.join(BASE_DIR, "churn_model.pkl")
+PREPROCESSOR_PATH = os.path.join(BASE_DIR, "preprocessor.pkl")
+DATA_PATH = os.path.join(BASE_DIR, "telco_clean.csv")
+
+# Load Model safely
+try:
+    model = joblib.load(MODEL_PATH)
+except Exception as e:
+    model = None
+
+# Load Preprocessor safely
+try:
+    preprocessor = joblib.load(PREPROCESSOR_PATH)
+except Exception as e:
+    preprocessor = None
+
+# Load Dataset safely
+def load_data():
     try:
-        model = joblib.load(MODEL_PATH) if os.path.exists(MODEL_PATH) else None
-        preprocessor = joblib.load(PREPROCESSOR_PATH) if os.path.exists(PREPROCESSOR_PATH) else None
-        df = pd.read_csv(DATA_PATH) if os.path.exists(DATA_PATH) else None
-        return model, preprocessor, df
+        if os.path.exists(DATA_PATH):
+            return pd.read_csv(DATA_PATH)
+        return None
     except Exception as e:
-        st.error(f"Error loading model artifacts: {e}")
-        return None, None, None
+        return None
 
-model, preprocessor, df = load_artifacts()
-
-if model is not None:
-    st.success("🟢 Model successfully loaded and ready for prediction!")
-else:
-    st.warning("⚠ Model file not found. Please check if `churn_model.pkl` is uploaded.")
-
-# ---------------------------------------------------------
-# Prediction Form UI
-# ---------------------------------------------------------
-st.subheader("📝 Enter Customer Details")
-
-with st.form("prediction_form"):
-    col1, col2, col3 = st.columns(3)
+# Prediction Function helper
+def predict_churn(input_data):
+    if model is None:
+        raise ValueError("Model is not loaded properly. Check file paths.")
     
-    with col1:
-        tenure = st.number_input("Tenure (Months)", min_value=0, max_value=72, value=12)
-        monthly_charges = st.number_input("Monthly Charges ($)", min_value=0.0, max_value=200.0, value=50.0)
-        
-    with col2:
-        contract = st.selectbox("Contract Type", ["Month-to-month", "One year", "Two year"])
-        payment_method = st.selectbox("Payment Method", ["Electronic check", "Mailed check", "Bank transfer", "Credit card"])
-        
-    with col3:
-        internet_service = st.selectbox("Internet Service", ["DSL", "Fiber optic", "No"])
-        online_security = st.selectbox("Online Security", ["Yes", "No", "No internet service"])
-
-    submit_button = st.form_submit_button(label="Predict Churn")
-
-if submit_button:
-    st.info("🔄 Processing prediction...")
-    # Yahan aap apna prediction logic laga sakte hain jab model ready ho
-    if model is not None:
-        st.balloons()
-        st.success("Prediction: Customer is likely to STAY (Low Risk)")
-    else:
-        st.error("Cannot make prediction because the model is missing.")
+    prediction = model.predict(input_data)
+    probability = model.predict_proba(input_data) if hasattr(model, "predict_proba") else None
+    
+    return prediction, probability
