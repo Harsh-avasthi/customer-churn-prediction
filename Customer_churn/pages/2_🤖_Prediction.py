@@ -5,6 +5,8 @@
 
 import streamlit as st
 import pandas as pd
+import sys
+import os
 
 from utils import (
     predict_customer,
