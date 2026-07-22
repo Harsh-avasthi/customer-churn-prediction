@@ -34,7 +34,7 @@ pages = {
     "Prediction & Analytics": [
         st.Page("pages/2_🤖_Prediction.py", title="Prediction", icon="🤖"),
         st.Page("pages/3_📊_Analytics.py", title="Analytics", icon="📊"),
-        st.Page("pages/4_Batch_Prediction.py", title="Batch Prediction", icon="📂")
+        st.Page("pages/4_📁_Batch_Prediction.py", title="Batch Prediction", icon="📂")
     ],
     "Insights & Model": [
         st.Page("pages/5_Model_Performance.py", title="Model Performance", icon="📉"),
