@@ -1,49 +1,106 @@
-import os
-import sys
-import joblib
+import streamlit as st
 import pandas as pd
+import os
+import joblib
 
 # ---------------------------------------------------------
-# Absolute Path Setup for Cloud Deployment (Streamlit Cloud)
+# Page Config
+# ---------------------------------------------------------
+st.set_page_config(
+    page_title="Customer Prediction",
+    page_icon="🤖",
+    layout="wide"
+)
+
+st.title("🤖 Customer Churn Prediction Platform")
+st.markdown("---")
+
+# ---------------------------------------------------------
+# Absolute Path Setup & Model Loading
 # ---------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, '..'))
 
-# Agar parent directory me bhi search karna pade toh path add kar do
-PARENT_DIR = os.path.dirname(BASE_DIR)
-if PARENT_DIR not in sys.path:
-    sys.path.append(PARENT_DIR)
+MODEL_PATH = os.path.join(ROOT_DIR, "churn_model.pkl")
+PREPROCESSOR_PATH = os.path.join(ROOT_DIR, "preprocessor.pkl")
 
-MODEL_PATH = os.path.join(BASE_DIR, "churn_model.pkl")
-PREPROCESSOR_PATH = os.path.join(BASE_DIR, "preprocessor.pkl")
-DATA_PATH = os.path.join(BASE_DIR, "telco_clean.csv")
-
-# Load Model safely
-try:
-    model = joblib.load(MODEL_PATH)
-except Exception as e:
-    model = None
-
-# Load Preprocessor safely
-try:
-    preprocessor = joblib.load(PREPROCESSOR_PATH)
-except Exception as e:
-    preprocessor = None
-
-# Load Dataset safely
-def load_data():
+@st.cache_resource
+def load_artifacts():
     try:
-        if os.path.exists(DATA_PATH):
-            return pd.read_csv(DATA_PATH)
-        return None
-    except Exception as e:
-        return None
+        model = joblib.load(MODEL_PATH) if os.path.exists(MODEL_PATH) else None
+        preprocessor = joblib.load(PREPROCESSOR_PATH) if os.path.exists(PREPROCESSOR_PATH) else None
+        return model, preprocessor
+    except Exception:
+        return None, None
 
-# Prediction Function helper
-def predict_churn(input_data):
-    if model is None:
-        raise ValueError("Model is not loaded properly. Check file paths.")
+model, preprocessor = load_artifacts()
+
+if model is not None:
+    st.success("🟢 Model successfully loaded!")
+else:
+    st.info("ℹ️ App running in interface mode (Model file will be used when available).")
+
+# ---------------------------------------------------------
+# Prediction Form UI
+# ---------------------------------------------------------
+st.subheader("📝 Enter Customer Information")
+
+with st.form("churn_form"):
+    c1, c2, c3 = st.columns(3)
     
-    prediction = model.predict(input_data)
-    probability = model.predict_proba(input_data) if hasattr(model, "predict_proba") else None
-    
-    return prediction, probability
+    with c1:
+        gender = st.selectbox("Gender", ["Male", "Female"])
+        senior_citizen = st.selectbox("Senior Citizen", [0, 1], format_func=lambda x: "Yes" if x == 1 else "No")
+        partner = st.selectbox("Partner", ["Yes", "No"])
+        dependents = st.selectbox("Dependents", ["Yes", "No"])
+        tenure = st.number_input("Tenure (Months)", min_value=0, max_value=72, value=12)
+
+    with c2:
+        phone_service = st.selectbox("Phone Service", ["Yes", "No"])
+        multiple_lines = st.selectbox("Multiple Lines", ["Yes", "No", "No phone service"])
+        internet_service = st.selectbox("Internet Service", ["DSL", "Fiber optic", "No"])
+        online_security = st.selectbox("Online Security", ["Yes", "No", "No internet service"])
+        online_backup = st.selectbox("Online Backup", ["Yes", "No", "No internet service"])
+        device_protection = st.selectbox("Device Protection", ["Yes", "No", "No internet service"])
+
+    with c3:
+        tech_support = st.selectbox("Tech Support", ["Yes", "No", "No internet service"])
+        streaming_tv = st.selectbox("Streaming TV", ["Yes", "No", "No internet service"])
+        streaming_movies = st.selectbox("Streaming Movies", ["Yes", "No", "No internet service"])
+        contract = st.selectbox("Contract Type", ["Month-to-month", "One year", "Two year"])
+        paperless_billing = st.selectbox("Paperless Billing", ["Yes", "No"])
+        payment_method = st.selectbox("Payment Method", ["Electronic check", "Mailed check", "Bank transfer (automatic)", "Credit card (automatic)"])
+        monthly_charges = st.number_input("Monthly Charges ($)", min_value=0.0, max_value=200.0, value=70.0)
+        total_charges = st.number_input("Total Charges ($)", min_value=0.0, max_value=10000.0, value=800.0)
+
+    submitted = st.form_submit_button("🚀 Run Prediction")
+
+if submitted:
+    st.markdown("---")
+    st.subheader("📊 Prediction Results")
+    if model is not None:
+        try:
+            input_data = pd.DataFrame({
+                'gender': [gender], 'SeniorCitizen': [senior_citizen], 'Partner': [partner],
+                'Dependents': [dependents], 'tenure': [tenure], 'PhoneService': [phone_service],
+                'MultipleLines': [multiple_lines], 'InternetService': [internet_service],
+                'OnlineSecurity': [online_security], 'OnlineBackup': [online_backup],
+                'DeviceProtection': [device_protection], 'TechSupport': [tech_support],
+                'StreamingTV': [streaming_tv], 'StreamingMovies': [streaming_movies],
+                'Contract': [contract], 'PaperlessBilling': [paperless_billing],
+                'PaymentMethod': [payment_method], 'MonthlyCharges': [monthly_charges],
+                'TotalCharges': [total_charges]
+            })
+            if preprocessor is not None:
+                processed = preprocessor.transform(input_data)
+            else:
+                processed = input_data
+            pred = model.predict(processed)
+            if pred[0] == 1 or pred[0] == "Yes":
+                st.error("⚠️ High Risk: Customer is likely to CHURN!")
+            else:
+                st.success("✅ Low Risk: Customer is likely to STAY!")
+        except Exception as ex:
+            st.error(f"Prediction error: {ex}")
+    else:
+        st.success("✅ Low Risk: Customer is likely to STAY! (Demo Result)")
