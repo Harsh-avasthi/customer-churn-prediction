@@ -14,28 +14,25 @@ st.set_page_config(
 )
 
 # ---------------------------
-# Load CSS
+# Load CSS (Safe Mode)
 # ---------------------------
 
-with open("style.css") as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+try:
+    with open("style.css") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+except FileNotFoundError:
+    pass
 
 # ---------------------------
-# Sidebar
+# Sidebar (Shared Elements)
 # ---------------------------
 
 with st.sidebar:
-
     st.image("https://img.icons8.com/color/96/artificial-intelligence.png", width=80)
-
     st.title("Customer Churn")
-
     st.caption("Prediction Platform v2.0")
-
     st.markdown("---")
-
     st.success("🟢 Model Loaded")
-
     st.info(f"""
 **Model**
 
@@ -43,25 +40,18 @@ with st.sidebar:
 
 Accuracy : {MODEL_ACCURACY}
 """)
-
     st.markdown("---")
-
     st.write("### 📌 Quick Stats")
-
     st.metric("Customers", TOTAL_CUSTOMERS)
-
     st.metric("Churn", CHURN_RATE)
-
     st.metric("Retention", RETENTION)
 
 # ---------------------------
-# Header
+# Header (Main Dashboard Content)
 # ---------------------------
 
 st.title("🚀 Customer Churn Prediction Platform")
-
 st.caption("AI Powered Customer Retention Dashboard")
-
 st.markdown("---")
 
 # ---------------------------
@@ -88,10 +78,9 @@ st.markdown("---")
 # Welcome
 # ---------------------------
 
-left, right = st.columns([2,1])
+left, right = st.columns([2, 1])
 
 with left:
-
     st.markdown("""
 ## 👋 Welcome
 
@@ -111,11 +100,10 @@ This application predicts customer churn using Machine Learning.
 
 - 💼 Business Insights
 
-Use the **left sidebar** to navigate.
+Use the **left sidebar** to navigate between pages.
 """)
 
 with right:
-
     st.markdown("""
 <div class="glass">
 
@@ -151,7 +139,6 @@ st.subheader("📊 Dashboard Overview")
 chart1, chart2 = st.columns(2)
 
 with chart1:
-
     st.info("""
 ### 🎯 Objective
 
@@ -161,7 +148,6 @@ Enable retention strategies before churn happens.
 """)
 
 with chart2:
-
     st.success("""
 ### 💡 Business Benefits
 
