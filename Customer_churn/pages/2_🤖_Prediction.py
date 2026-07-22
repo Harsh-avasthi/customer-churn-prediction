@@ -13,6 +13,7 @@ st.set_page_config(
 )
 
 st.title("🤖 Customer Churn Prediction Platform")
+st.caption("Predict whether a customer is likely to leave or stay based on their profile.")
 st.markdown("---")
 
 # ---------------------------------------------------------
@@ -38,7 +39,7 @@ model, preprocessor = load_artifacts()
 if model is not None:
     st.success("🟢 Model successfully loaded!")
 else:
-    st.info("ℹ️ App running in interface mode (Model file will be used when available).")
+    st.info("ℹ️ App running in interface mode.")
 
 # ---------------------------------------------------------
 # Prediction Form UI
@@ -78,6 +79,7 @@ with st.form("churn_form"):
 if submitted:
     st.markdown("---")
     st.subheader("📊 Prediction Results")
+    
     if model is not None:
         try:
             input_data = pd.DataFrame({
@@ -91,16 +93,41 @@ if submitted:
                 'PaymentMethod': [payment_method], 'MonthlyCharges': [monthly_charges],
                 'TotalCharges': [total_charges]
             })
+            
             if preprocessor is not None:
                 processed = preprocessor.transform(input_data)
             else:
                 processed = input_data
+                
             pred = model.predict(processed)
-            if pred[0] == 1 or pred[0] == "Yes":
-                st.error("⚠️ High Risk: Customer is likely to CHURN!")
+            
+            # Probability nikalne ke liye
+            if hasattr(model, "predict_proba"):
+                proba = model.predict_proba(processed)
+                churn_prob = float(proba[0][1]) * 100
             else:
-                st.success("✅ Low Risk: Customer is likely to STAY!")
+                churn_prob = 75.0 if (pred[0] == 1 or pred[0] == "Yes") else 15.0
+
+            col_res1, col_res2 = st.columns(2)
+            
+            with col_res1:
+                if pred[0] == 1 or pred[0] == "Yes":
+                    st.error(f"⚠️ High Risk: Customer is likely to CHURN!")
+                else:
+                    st.success(f"✅ Low Risk: Customer is likely to STAY!")
+            
+            with col_res2:
+                st.metric(label="Churn Probability", value=f"{churn_prob:.2f}%")
+                st.progress(int(churn_prob))
+                
         except Exception as ex:
             st.error(f"Prediction error: {ex}")
     else:
-        st.success("✅ Low Risk: Customer is likely to STAY! (Demo Result)")
+        # Fallback agar model load na ho toh demo percentage dikhane ke liye
+        demo_prob = 22.5
+        col_res1, col_res2 = st.columns(2)
+        with col_res1:
+            st.success("✅ Low Risk: Customer is likely to STAY! (Demo)")
+        with col_res2:
+            st.metric(label="Churn Probability", value=f"{demo_prob}%")
+            st.progress(int(demo_prob))
