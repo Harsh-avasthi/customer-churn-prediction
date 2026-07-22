@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 
 # ---------------------------------------
 # Page Config
@@ -11,11 +12,21 @@ st.set_page_config(
 )
 
 # ---------------------------------------
-# Load CSS
+# Absolute Path Setup
 # ---------------------------------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, '..'))
+CSS_PATH = os.path.join(ROOT_DIR, "style.css")
 
-with open("style.css") as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+# ---------------------------------------
+# Load CSS Safely
+# ---------------------------------------
+try:
+    if os.path.exists(CSS_PATH):
+        with open(CSS_PATH) as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+except FileNotFoundError:
+    pass
 
 # ---------------------------------------
 # Header
@@ -202,7 +213,7 @@ st.subheader("👨‍💻 Developer")
 
 st.success("""
 
-Name : Harsh
+Name : Harsh Awasthi
 
 Role : Data Science & Machine Learning Enthusiast
 
