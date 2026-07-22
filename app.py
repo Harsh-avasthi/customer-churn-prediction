@@ -24,29 +24,6 @@ except FileNotFoundError:
     pass
 
 # ---------------------------
-# Multi-page Navigation Setup
-# ---------------------------
-
-pages = {
-    "Overview": [
-        st.Page("app.py", title="Dashboard", icon="🏠")
-    ],
-    "Prediction & Analytics": [
-        st.Page("pages/2_🤖_Prediction.py", title="Prediction", icon="🤖"),
-        st.Page("pages/3_📊_Analytics.py", title="Analytics", icon="📊"),
-        st.Page("pages/4_📁_Batch_Prediction.py", title="Batch Prediction", icon="📂")
-    ],
-    "Insights & Model": [
-        st.Page("pages/5_Model_Performance.py", title="Model Performance", icon="📉"),
-        st.Page("pages/6_Business_Insights.py", title="Business Insights", icon="💼"),
-        st.Page("pages/7_Settings.py", title="Settings", icon="⚙️"),
-        st.Page("pages/8_About.py", title="About", icon="ℹ️")
-    ]
-}
-
-pg = st.navigation(pages)
-
-# ---------------------------
 # Sidebar (Shared Elements)
 # ---------------------------
 
@@ -68,9 +45,6 @@ Accuracy : {MODEL_ACCURACY}
     st.metric("Customers", TOTAL_CUSTOMERS)
     st.metric("Churn", CHURN_RATE)
     st.metric("Retention", RETENTION)
-
-# Run the selected page
-pg.run()
 
 # ---------------------------
 # Header (Main Dashboard Content)
