@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import os
 
 # ---------------------------------------
 # Page Config
@@ -13,193 +14,209 @@ st.set_page_config(
 )
 
 # ---------------------------------------
-# Load CSS
+# Absolute Path Setup
 # ---------------------------------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, '..'))
 
+CSS_PATH = os.path.join(ROOT_DIR, "style.css")
+DATA_PATH = os.path.join(ROOT_DIR, "telco_clean.csv")
+
+# ---------------------------------------
+# Load CSS Safely
+# ---------------------------------------
 try:
-    with open("style.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    if os.path.exists(CSS_PATH):
+        with open(CSS_PATH) as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 except FileNotFoundError:
     pass
 
 # ---------------------------------------
-# Load Dataset
+# Load Dataset Safely
 # ---------------------------------------
 
 @st.cache_data
 def load_data():
-    data = pd.read_csv("telco_clean.csv")
-    # Convert 'Churn' column to numeric (1 for Yes, 0 for No) for calculations like sum()
-    if "Churn" in data.columns:
-        data["Churn"] = data["Churn"].apply(lambda x: 1 if str(x).strip() == 'Yes' else 0)
-    return data
+    if os.path.exists(DATA_PATH):
+        data = pd.read_csv(DATA_PATH)
+        # Convert 'Churn' column to numeric (1 for Yes, 0 for No) for calculations like sum()
+        if "Churn" in data.columns:
+            data["Churn"] = data["Churn"].apply(lambda x: 1 if str(x).strip() == 'Yes' else 0)
+        return data
+    return None
 
 df = load_data()
 
-# ---------------------------------------
-# Header
-# ---------------------------------------
+if df is not None:
 
-st.title("💼 Business Insights Dashboard")
+    # ---------------------------------------
+    # Header
+    # ---------------------------------------
 
-st.caption("AI Driven Customer Retention Insights")
+    st.title("💼 Business Insights Dashboard")
 
-st.markdown("---")
+    st.caption("AI Driven Customer Retention Insights")
 
-# ---------------------------------------
-# KPI Cards
-# ---------------------------------------
+    st.markdown("---")
 
-total = len(df)
-churn = int(df["Churn"].sum())
-stay = total - churn
-rate = (churn / total) * 100
+    # ---------------------------------------
+    # KPI Cards
+    # ---------------------------------------
 
-c1, c2, c3, c4 = st.columns(4)
+    total = len(df)
+    churn = int(df["Churn"].sum())
+    stay = total - churn
+    rate = (churn / total) * 100
 
-with c1:
-    st.metric("👥 Customers", total)
+    c1, c2, c3, c4 = st.columns(4)
 
-with c2:
-    st.metric("🚨 Churn Customers", churn)
+    with c1:
+        st.metric("👥 Customers", total)
 
-with c3:
-    st.metric("✅ Retained", stay)
+    with c2:
+        st.metric("🚨 Churn Customers", churn)
 
-with c4:
-    st.metric("📊 Churn Rate", f"{rate:.2f}%")
+    with c3:
+        st.metric("✅ Retained", stay)
 
-st.markdown("---")
+    with c4:
+        st.metric("📊 Churn Rate", f"{rate:.2f}%")
 
-# ---------------------------------------
-# Estimated Revenue Loss
-# ---------------------------------------
+    st.markdown("---")
 
-avg_bill = df["MonthlyCharges"].mean()
+    # ---------------------------------------
+    # Estimated Revenue Loss
+    # ---------------------------------------
 
-estimated_loss = churn * avg_bill
+    avg_bill = df["MonthlyCharges"].mean()
 
-st.error(
-    f"💰 Estimated Monthly Revenue at Risk : ₹ {estimated_loss:,.2f}"
-)
+    estimated_loss = churn * avg_bill
 
-st.markdown("---")
+    st.error(
+        f"💰 Estimated Monthly Revenue at Risk : ₹ {estimated_loss:,.2f}"
+    )
 
-# ---------------------------------------
-# Churn By Contract
-# ---------------------------------------
+    st.markdown("---")
 
-st.subheader("📊 Churn by Contract")
+    # ---------------------------------------
+    # Churn By Contract
+    # ---------------------------------------
 
-contract = (
-    df.groupby("Contract")["Churn"]
-    .sum()
-    .reset_index()
-)
+    st.subheader("📊 Churn by Contract")
 
-fig = px.bar(
-    contract,
-    x="Contract",
-    y="Churn",
-    color="Contract",
-    text="Churn",
-    title="Contract Wise Churn"
-)
+    contract = (
+        df.groupby("Contract")["Churn"]
+        .sum()
+        .reset_index()
+    )
 
-st.plotly_chart(fig, use_container_width=True)
+    fig = px.bar(
+        contract,
+        x="Contract",
+        y="Churn",
+        color="Contract",
+        text="Churn",
+        title="Contract Wise Churn"
+    )
 
-# ---------------------------------------
-# Internet Service
-# ---------------------------------------
+    st.plotly_chart(fig, use_container_width=True)
 
-st.subheader("🌐 Internet Service Analysis")
+    # ---------------------------------------
+    # Internet Service
+    # ---------------------------------------
 
-internet = (
-    df.groupby("InternetService")["Churn"]
-    .sum()
-    .reset_index()
-)
+    st.subheader("🌐 Internet Service Analysis")
 
-fig = px.pie(
-    internet,
-    values="Churn",
-    names="InternetService",
-    hole=.45,
-    title="Internet Service Churn"
-)
+    internet = (
+        df.groupby("InternetService")["Churn"]
+        .sum()
+        .reset_index()
+    )
 
-st.plotly_chart(fig, use_container_width=True)
+    fig = px.pie(
+        internet,
+        values="Churn",
+        names="InternetService",
+        hole=.45,
+        title="Internet Service Churn"
+    )
 
-# ---------------------------------------
-# AI Recommendation
-# ---------------------------------------
+    st.plotly_chart(fig, use_container_width=True)
 
-st.markdown("---")
+    # ---------------------------------------
+    # AI Recommendation
+    # ---------------------------------------
 
-st.subheader("🤖 AI Business Suggestions")
+    st.markdown("---")
 
-if rate < 20:
+    st.subheader("🤖 AI Business Suggestions")
 
-    st.success("""
-### 🟢 Healthy Customer Base
+    if rate < 20:
 
-✔ Continue loyalty programs
+        st.success("""
+    ### 🟢 Healthy Customer Base
 
-✔ Upsell premium plans
+    ✔ Continue loyalty programs
 
-✔ Focus on customer engagement
-""")
+    ✔ Upsell premium plans
 
-elif rate < 40:
+    ✔ Focus on customer engagement
+    """)
 
-    st.warning("""
-### 🟡 Moderate Risk
+    elif rate < 40:
 
-✔ Launch targeted campaigns
+        st.warning("""
+    ### 🟡 Moderate Risk
 
-✔ Offer annual contracts
+    ✔ Launch targeted campaigns
 
-✔ Improve customer support
+    ✔ Offer annual contracts
 
-✔ Provide personalized discounts
-""")
+    ✔ Improve customer support
+
+    ✔ Provide personalized discounts
+    """)
+
+    else:
+
+        st.error("""
+    ### 🔴 High Risk
+
+    ✔ Immediate retention campaign
+
+    ✔ Contact high-value customers
+
+    ✔ Improve service quality
+
+    ✔ Offer special discounts
+
+    ✔ Assign retention managers
+    """)
+
+    st.markdown("---")
+
+    # ---------------------------------------
+    # Executive Summary
+    # ---------------------------------------
+
+    st.subheader("📄 Executive Summary")
+
+    st.info(f"""
+    Total Customers : {total}
+
+    Customers at Risk : {churn}
+
+    Retention Rate : {(stay/total)*100:.2f}%
+
+    Estimated Revenue at Risk :
+
+    ₹ {estimated_loss:,.2f} / Month
+
+    Recommendation :
+
+    Focus on Month-to-Month contract customers and provide loyalty offers.
+    """)
 
 else:
-
-    st.error("""
-### 🔴 High Risk
-
-✔ Immediate retention campaign
-
-✔ Contact high-value customers
-
-✔ Improve service quality
-
-✔ Offer special discounts
-
-✔ Assign retention managers
-""")
-
-st.markdown("---")
-
-# ---------------------------------------
-# Executive Summary
-# ---------------------------------------
-
-st.subheader("📄 Executive Summary")
-
-st.info(f"""
-Total Customers : {total}
-
-Customers at Risk : {churn}
-
-Retention Rate : {(stay/total)*100:.2f}%
-
-Estimated Revenue at Risk :
-
-₹ {estimated_loss:,.2f} / Month
-
-Recommendation :
-
-Focus on Month-to-Month contract customers and provide loyalty offers.
-""")
+    st.error("⚠️ `telco_clean.csv` file not found in the root directory. Please check your GitHub files.")
